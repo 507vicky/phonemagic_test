@@ -3,71 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>星軌校準法杖 - 核心模組</title>
+    <title>星軌校準法杖 - 直覺版</title>
     <style>
         /* 重置與防誤觸設定 */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body, html {
             width: 100%; height: 100%;
-            background-color: #050505; /* 深色科技感背景 */
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden; /* 防止滾動 */
-            touch-action: none; /* 防止所有預設觸控手勢（如縮放、滑動） */
+            background-color: #0a0a0a; /* 極簡深色背景 */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            overflow: hidden; 
+            touch-action: none; 
             display: flex;
             justify-content: center;
             align-items: center;
+            color: #fff;
         }
 
-        /* 發光層：作為法杖頭部的光源 */
+        /* 發光層：維持單純的單色光暈，避免過度花俏 */
         #light-layer {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             background: transparent;
-            transition: background 0.8s ease-in-out;
+            transition: background 0.6s ease-out;
             z-index: 1;
         }
 
-        /* 介面容器 */
+        /* 主介面容器 */
         #ui-container {
             position: relative;
             z-index: 10;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 40px;
+            gap: 50px;
+            transition: opacity 0.5s ease;
         }
 
-        /* 狀態文字 */
+        /* 狀態文字：極簡排版 */
         #status-text {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 1.2rem;
-            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.1rem;
+            letter-spacing: 3px;
             text-align: center;
-            transition: color 0.3s ease;
+            height: 60px; /* 固定高度避免跳動 */
         }
 
-        /* 拇指觸控區按鈕 - 玻璃擬物化極簡設計 */
+        /* 巨大的中央指示圖示 (動畫用) */
+        #center-icon {
+            font-size: 5rem;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* 玻璃質感啟動按鈕 */
         #magic-btn {
-            width: 120px;
-            height: 120px;
+            width: 100px; height: 100px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-            font-size: 1.2rem;
-            letter-spacing: 4px;
-            text-indent: 4px; /* 修正 letter-spacing 造成的視覺偏移 */
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
             outline: none;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
             cursor: pointer;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
 
-        #magic-btn:active {
-            transform: scale(0.95);
+        /* 動畫：聆聽中的呼吸燈效 */
+        .listening {
+            animation: pulse 1.5s infinite;
+            border-color: rgba(255, 255, 255, 0.8) !important;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+            70% { box-shadow: 0 0 0 30px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+
+        /* 動畫：暗示玩家揮動法杖 */
+        .shaking-hint {
+            animation: shakeIt 0.8s infinite;
+        }
+
+        @keyframes shakeIt {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(15deg) scale(1.1); }
+            50% { transform: rotate(0deg) scale(1.1); }
+            75% { transform: rotate(-15deg) scale(1.1); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* --- 星座解鎖彈窗 (玻璃擬物化卡片) --- */
+        #result-card {
+            position: absolute;
+            z-index: 50;
+            width: 80%;
+            max-width: 320px;
+            padding: 40px 20px;
+            border-radius: 24px;
             background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(50px);
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
+        }
+
+        #result-card.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .zodiac-title {
+            font-size: 2rem;
+            letter-spacing: 4px;
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+
+        .zodiac-element {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.7);
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+
+        .reset-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            color: white;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: background 0.3s;
         }
     </style>
 </head>
@@ -76,157 +156,174 @@
     <div id="light-layer"></div>
 
     <div id="ui-container">
-        <div id="status-text">星軌待命中<br>請按下啟動鍵</div>
+        <div id="center-icon">✨</div>
         <button id="magic-btn">啟動</button>
+        <div id="status-text">觸碰以喚醒星軌</div>
+    </div>
+
+    <div id="result-card">
+        <div class="zodiac-title" id="zodiac-name">雙子座</div>
+        <div class="zodiac-element" id="zodiac-desc">風元素．星軌校準完成</div>
+        <button class="reset-btn" onclick="resetMagic()">再次校準</button>
     </div>
 
     <script>
-        // --- 狀態變數 ---
         let isSpellCharged = false;
-        const shakeThreshold = 15; // 揮動力道門檻，可根據實際測試調整
+        let currentElement = ''; 
+        const shakeThreshold = 15;
 
-        // --- DOM 元素 ---
         const btn = document.getElementById('magic-btn');
         const statusText = document.getElementById('status-text');
         const lightLayer = document.getElementById('light-layer');
+        const centerIcon = document.getElementById('center-icon');
+        const uiContainer = document.getElementById('ui-container');
+        const resultCard = document.getElementById('result-card');
 
-        // --- 1. 語音辨識設定 (Web Speech API) ---
+        // 定義元素與星座的對應 (根據你的企劃書)
+        const elementZodiacs = {
+            'fire': { name: '火元素', color: 'rgba(210, 50, 20, 0.9)', icon: '🔥', zodiacs: ['牡羊座', '獅子座', '射手座'] },
+            'water': { name: '水元素', color: 'rgba(20, 100, 210, 0.9)', icon: '💧', zodiacs: ['巨蟹座', '天蠍座', '雙魚座'] },
+            'wind': { name: '風元素', color: 'rgba(60, 180, 150, 0.9)', icon: '🌪️', zodiacs: ['雙子座', '天秤座', '水瓶座'] },
+            'earth': { name: '土元素', color: 'rgba(150, 110, 60, 0.9)', icon: '🌍', zodiacs: ['金牛座', '處女座', '摩羯座'] }
+        };
+
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.lang = 'zh-TW';
-            recognition.continuous = false; // 唸完一句即停止
+            recognition.continuous = false;
 
             recognition.onstart = function() {
-                statusText.innerHTML = "聆聽咒語中...<br>請說出元素名稱";
+                // UI 變化：呼吸燈提示正在聽
+                btn.classList.add('listening');
                 btn.innerText = "聆聽";
+                statusText.innerHTML = "請說出元素咒語<br>(如：火、水、風、土)";
+                centerIcon.style.opacity = '0';
             };
 
             recognition.onresult = function(event) {
+                btn.classList.remove('listening');
                 const transcript = event.results[0][0].transcript;
-                console.log("語音辨識結果:", transcript);
                 checkSpell(transcript);
             };
 
             recognition.onerror = function(event) {
-                console.error("語音錯誤:", event.error);
-                
-                // 根據真實錯誤代碼給予精確提示
-                if (event.error === 'not-allowed') {
-                    statusText.innerHTML = "⚠️ 權限被拒絕<br>請允許麥克風權限";
-                } else if (event.error === 'no-speech') {
-                    statusText.innerHTML = "🔇 沒聽清楚<br>請靠近麥克風再試一次";
-                } else if (event.error === 'network') {
-                    statusText.innerHTML = "🌐 網路異常<br>語音辨識需要連網";
-                } else {
-                    statusText.innerHTML = `❌ 系統錯誤: ${event.error}<br>請確認是否使用 HTTPS`;
-                }
-                
-                btn.innerText = "重新啟動";
-                lightLayer.style.background = "transparent"; // 重置發光層
+                btn.classList.remove('listening');
+                if (event.error === 'not-allowed') statusText.innerHTML = "⚠️ 請允許麥克風權限";
+                else if (event.error === 'no-speech') statusText.innerHTML = "🔇 沒聽清楚，請再試一次";
+                else statusText.innerHTML = `❌ 錯誤: ${event.error}`;
+                btn.innerText = "重試";
             };
-        } else {
-            statusText.innerHTML = "您的瀏覽器<br>不支援語音魔法";
         }
 
-        // --- 判斷咒語邏輯 ---
+        // 判斷咒語邏輯
         function checkSpell(text) {
-            // 避免霓虹感，使用純粹的高級光暈色彩
-            if (text.includes('火') || text.includes('獅子') || text.includes('牡羊') || text.includes('射手')) {
-                chargeMagic("🔥 火元素確認", "rgba(230, 60, 20, 0.85)"); // 烈焰橘紅
-            } else if (text.includes('水') || text.includes('巨蟹') || text.includes('天蠍') || text.includes('雙魚')) {
-                chargeMagic("💧 水元素確認", "rgba(20, 120, 240, 0.85)"); // 湛藍
-            } else if (text.includes('風') || text.includes('雙子') || text.includes('天秤') || text.includes('水瓶')) {
-                chargeMagic("🌪️ 風元素確認", "rgba(100, 220, 180, 0.85)"); // 碧綠
-            } else if (text.includes('土') || text.includes('地') || text.includes('金牛') || text.includes('處女') || text.includes('摩羯')) {
-                chargeMagic("🌍 土元素確認", "rgba(180, 130, 70, 0.85)"); // 大地赭石
-            } else {
-                statusText.innerHTML = "星軌未對齊<br>請重試咒語";
+            if (text.includes('火') || text.includes('獅子') || text.includes('射手')) activateElement('fire');
+            else if (text.includes('水') || text.includes('巨蟹') || text.includes('雙魚')) activateElement('water');
+            else if (text.includes('風') || text.includes('雙子') || text.includes('水瓶')) activateElement('wind');
+            else if (text.includes('土') || text.includes('地') || text.includes('摩羯')) activateElement('earth');
+            else {
+                statusText.innerHTML = "星軌未對齊，請重試";
                 btn.innerText = "啟動";
-                lightLayer.style.background = "transparent";
             }
         }
 
-        // 充能成功動作
-        function chargeMagic(message, color) {
+        // 充能成功，準備揮動
+        function activateElement(elementKey) {
             isSpellCharged = true;
-            statusText.innerHTML = `${message}<br>能量充填，請揮動法杖！`;
-            statusText.style.color = "#fff";
-            btn.innerText = "待命";
-            lightLayer.style.background = color; // 螢幕發光
+            currentElement = elementKey;
+            let elData = elementZodiacs[elementKey];
+
+            // 視覺強烈轉換
+            lightLayer.style.background = elData.color;
+            btn.style.opacity = '0'; // 隱藏按鈕，強迫視線集中在中央圖示
+            btn.style.pointerEvents = 'none';
             
-            // 輕微震動提示充能完成
-            if (navigator.vibrate) navigator.vibrate(50);
+            // 顯示巨大圖示並加上「晃動動畫」
+            centerIcon.innerText = elData.icon;
+            centerIcon.style.opacity = '1';
+            centerIcon.style.transform = 'scale(1)';
+            centerIcon.classList.add('shaking-hint');
+            
+            statusText.innerHTML = `已連結 ${elData.name}<br>揮動法杖釋放魔法！`;
+            
+            if (navigator.vibrate) navigator.vibrate(100);
         }
 
-        // --- 2. 動作偵測設定 (DeviceMotionEvent) ---
+        // 初始化陀螺儀
         function initMotionSensor() {
-            // iOS 13+ 需要使用者點擊授權
             if (typeof DeviceMotionEvent.requestPermission === 'function') {
                 DeviceMotionEvent.requestPermission()
                     .then(permissionState => {
-                        if (permissionState === 'granted') {
-                            window.addEventListener('devicemotion', handleMotion);
-                        } else {
-                            alert("需允許動作感測才能揮動法杖喔！");
-                        }
-                    })
-                    .catch(console.error);
+                        if (permissionState === 'granted') window.addEventListener('devicemotion', handleMotion);
+                    }).catch(console.error);
             } else {
-                // 非 iOS 13+ 裝置直接監聽
                 window.addEventListener('devicemotion', handleMotion);
             }
         }
 
-        // 處理揮動邏輯
+        // 處理揮動
         function handleMotion(event) {
             let acc = event.accelerationIncludingGravity;
             if (!acc.x) return;
-            
-            // 計算三軸總合加速度
             let totalForce = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
             
-            // 當力道大於門檻，且「已唸對咒語充能」時觸發
             if (totalForce > shakeThreshold && isSpellCharged) {
-                isSpellCharged = false; // 重置狀態，避免連續觸發
+                isSpellCharged = false; 
                 releaseMagic();
             }
         }
 
-        // 魔法釋放動作
+        // 釋放魔法，跳出星座卡片
         function releaseMagic() {
-            window.removeEventListener('devicemotion', handleMotion); // 暫時停止監聽
+            window.removeEventListener('devicemotion', handleMotion);
             
-            statusText.innerHTML = "✨ 星軌校準成功 ✨";
-            btn.innerText = "完成";
-            
-            // 強烈全白閃光與震動，模擬魔法爆發
+            // 全白閃光震動
             lightLayer.style.background = "rgba(255, 255, 255, 1)";
-            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 300]);
+            
+            // 隱藏原本介面
+            uiContainer.style.opacity = '0';
+            uiContainer.style.pointerEvents = 'none';
+            centerIcon.classList.remove('shaking-hint');
 
-            // 兩秒後跳轉或重置 (此處示範重置)
+            // 隨機抽取星座
+            let elData = elementZodiacs[currentElement];
+            let randomZodiac = elData.zodiacs[Math.floor(Math.random() * elData.zodiacs.length)];
+            
+            // 延遲一下顯示高級星座卡片
             setTimeout(() => {
-                lightLayer.style.background = "transparent";
-                statusText.innerHTML = "星軌待命中<br>請按下啟動鍵";
-                btn.innerText = "啟動";
-                statusText.style.color = "rgba(255, 255, 255, 0.7)";
-            }, 2500);
-
-            /* // 實際專案中，你可以在這裡跳轉到刮刮樂結果頁：
-             // window.location.href = "scratchcard.html?element=fire"; 
-            */
+                // 背景調回微亮的深色，突顯玻璃卡片
+                lightLayer.style.background = "rgba(20, 20, 20, 0.9)";
+                document.getElementById('zodiac-name').innerText = randomZodiac;
+                document.getElementById('zodiac-desc').innerText = `${elData.name} · 星軌校準完成`;
+                resultCard.classList.add('show');
+            }, 800);
         }
 
-        // --- 事件綁定 ---
+        // 重新開始機制
+        function resetMagic() {
+            resultCard.classList.remove('show');
+            uiContainer.style.opacity = '1';
+            uiContainer.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+            btn.innerText = "啟動";
+            centerIcon.style.opacity = '0';
+            centerIcon.style.transform = 'scale(0.5)';
+            statusText.innerHTML = "觸碰以喚醒星軌";
+            lightLayer.style.background = "transparent";
+            currentElement = '';
+        }
+
         btn.addEventListener('click', () => {
             if (recognition) {
-                initMotionSensor(); // 請求陀螺儀權限
-                recognition.start(); // 開始收音
+                initMotionSensor(); 
+                recognition.start(); 
             }
         });
-
     </script>
 </body>
 </html>
