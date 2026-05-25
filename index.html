@@ -80,7 +80,6 @@
             100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
         }
 
-        /* ✨ 全新動畫：暗示玩家畫 8 字型 (無限大符號) ✨ */
         .figure8-hint {
             animation: figure8 2s infinite ease-in-out;
         }
@@ -93,24 +92,28 @@
             100% { transform: translate(0, 0) scale(1); }
         }
 
-        /* --- 星座解鎖卡片 --- */
+        /* --- 🔮 升級版：元素刮刮樂卡片 --- */
         #result-card {
             position: absolute;
             z-index: 50;
-            width: 80%;
-            max-width: 320px;
-            padding: 40px 20px;
+            width: 85%;
+            max-width: 340px;
             border-radius: 24px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             text-align: center;
             opacity: 0;
             pointer-events: none;
             transform: translateY(50px);
             transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
         }
 
         #result-card.show {
@@ -119,13 +122,154 @@
             transform: translateY(0);
         }
 
-        .zodiac-title { font-size: 2rem; letter-spacing: 4px; margin-bottom: 15px; font-weight: 300; }
-        .zodiac-element { font-size: 1rem; color: rgba(255,255,255,0.7); letter-spacing: 2px; margin-bottom: 30px; }
-        .reset-btn {
-            background: rgba(255,255,255,0.2); border: none; padding: 12px 30px;
-            border-radius: 30px; color: white; font-size: 1rem; letter-spacing: 2px;
-            cursor: pointer; transition: background 0.3s;
+        /* 刮刮樂畫布容器 */
+        .scratch-container {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
+        /* 底層：被隱藏的真實星座內容 */
+        .scratch-reveal {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1;
+        }
+
+        .zodiac-icon { font-size: 3.5rem; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); }
+        .zodiac-title { font-size: 1.8rem; letter-spacing: 4px; font-weight: 300; color: #fff; }
+
+        /* 表層：刮刮樂 Canvas 塗層 */
+        #scratch-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 2;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        .zodiac-element { font-size: 0.9rem; color: rgba(255,255,255,0.5); letter-spacing: 2px; }
+        
+        .reset-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 12px 35px;
+            border-radius: 30px; color: white; font-size: 0.9rem; letter-spacing: 2px;
+            cursor: pointer; transition: all 0.3s; margin-top: 15px;
+        }
+        .reset-btn:hover { background: rgba(255,255,255,0.2); }
+
+        /* --- 右下角浮動按鈕 --- */
+        #collection-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
+            padding: 15px 20px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        #collection-btn:active { transform: scale(0.95); }
+
+        /* --- 收集冊彈出視窗 --- */
+        #collection-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 200;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        #collection-modal.show { opacity: 1; pointer-events: auto; }
+
+        .modal-content {
+            position: relative;
+            width: 90%;
+            max-width: 400px;
+            height: 80vh;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-title {
+            text-align: center;
+            font-size: 1.5rem;
+            letter-spacing: 4px;
+            font-weight: 300;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        #close-modal {
+            position: absolute;
+            top: 20px; right: 20px;
+            background: none; border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 2rem;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .zodiac-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        .zodiac-grid::-webkit-scrollbar { display: none; }
+
+        .zodiac-item {
+            aspect-ratio: 1 / 1;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.3);
+            transition: all 0.5s ease;
+        }
+
+        .zodiac-item.unlocked {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.9);
+            box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.05);
+        }
+
+        .item-name { font-size: 0.9rem; letter-spacing: 1px; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -139,21 +283,89 @@
     </div>
 
     <div id="result-card">
-        <div class="zodiac-title" id="zodiac-name">雙子座</div>
-        <div class="zodiac-element" id="zodiac-desc">風元素．星軌校準完成</div>
+        <div class="zodiac-element" id="zodiac-desc">火元素．召喚儀式</div>
+        
+        <div class="scratch-container">
+            <div class="scratch-reveal">
+                <div class="zodiac-icon" id="zodiac-icon">🔥</div>
+                <div class="zodiac-title" id="zodiac-name">未解鎖</div>
+            </div>
+            <canvas id="scratch-canvas" width="260" height="260"></canvas>
+        </div>
+
+        <div class="zodiac-element" style="opacity: 0.6;">請抹去星雲塗層以校準星座</div>
         <button class="reset-btn" onclick="resetMagic()">再次校準</button>
     </div>
 
+    <button id="collection-btn">✨ 星軌冊</button>
+
+    <div id="collection-modal">
+        <div class="modal-content">
+            <button id="close-modal">×</button>
+            <h2 class="modal-title">星軌收集冊</h2>
+            <div class="zodiac-grid" id="zodiac-grid"></div>
+        </div>
+    </div>
+
     <script>
+        const allZodiacs = [
+            '牡羊座', '金牛座', '雙子座', '巨蟹座', 
+            '獅子座', '處女座', '天秤座', '天蠍座', 
+            '射手座', '摩羯座', '水瓶座', '雙魚座'
+        ];
+
+        const collectionBtn = document.getElementById('collection-btn');
+        const collectionModal = document.getElementById('collection-modal');
+        const closeModalBtn = document.getElementById('close-modal');
+        const zodiacGrid = document.getElementById('zodiac-grid');
+
+        function renderCollection() {
+            let myCollection = JSON.parse(localStorage.getItem('zodiacStamps')) || [];
+            let collectedNames = myCollection.map(stamp => stamp.name);
+
+            zodiacGrid.innerHTML = ''; 
+
+            allZodiacs.forEach(zodiac => {
+                let itemDiv = document.createElement('div');
+                itemDiv.classList.add('zodiac-item');
+                
+                let iconSpan = document.createElement('span');
+                iconSpan.style.fontSize = '1.5rem';
+
+                let nameSpan = document.createElement('span');
+                nameSpan.classList.add('item-name');
+                nameSpan.innerText = zodiac;
+
+                if (collectedNames.includes(zodiac)) {
+                    itemDiv.classList.add('unlocked');
+                    iconSpan.innerText = '✨'; 
+                } else {
+                    iconSpan.innerText = '？';
+                }
+
+                itemDiv.appendChild(iconSpan);
+                itemDiv.appendChild(nameSpan);
+                zodiacGrid.appendChild(itemDiv);
+            });
+        }
+
+        collectionBtn.addEventListener('click', () => {
+            renderCollection(); 
+            collectionModal.classList.add('show');
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            collectionModal.classList.remove('show');
+        });
+        
         let isSpellCharged = false;
         let currentElement = ''; 
         
-        // --- ✨ 8字型動作偵測變數 ✨ ---
-        let motionStep = 0;         // 記錄畫8字的進度 (需達到4次轉折)
-        let lastMotionSign = 0;     // 記錄上一次加速度的方向 (正或負)
-        let lastMotionTime = 0;     // 記錄時間，避免雜訊並處理超時
-        const xThreshold = 4.5;     // X軸加速度門檻 (畫8字較為平緩，數值需降低)
-        const motionTimeout = 2500; // 必須在 2.5 秒內畫完 8 字型
+        let motionStep = 0;         
+        let lastMotionSign = 0;     
+        let lastMotionTime = 0;     
+        const xThreshold = 4.5;     
+        const motionTimeout = 2500; 
 
         const btn = document.getElementById('magic-btn');
         const statusText = document.getElementById('status-text');
@@ -162,11 +374,12 @@
         const uiContainer = document.getElementById('ui-container');
         const resultCard = document.getElementById('result-card');
 
+        // 擴充對應星座的視覺 icon
         const elementZodiacs = {
-            'fire': { name: '火元素', color: 'rgba(210, 50, 20, 0.9)', icon: '🔥', zodiacs: ['牡羊座', '獅子座', '射手座'] },
-            'water': { name: '水元素', color: 'rgba(20, 100, 210, 0.9)', icon: '💧', zodiacs: ['巨蟹座', '天蠍座', '雙魚座'] },
-            'wind': { name: '風元素', color: 'rgba(60, 180, 150, 0.9)', icon: '🌪️', zodiacs: ['雙子座', '天秤座', '水瓶座'] },
-            'earth': { name: '土元素', color: 'rgba(150, 110, 60, 0.9)', icon: '🌍', zodiacs: ['金牛座', '處女座', '摩羯座'] }
+            'fire': { name: '火元素', color: 'rgba(210, 50, 20, 0.9)', icon: '🔥', zodiacs: ['牡羊座', '獅子座', '射手座'], gradient: ['#e65c00', '#F9D423'] },
+            'water': { name: '水元素', color: 'rgba(20, 100, 210, 0.9)', icon: '💧', zodiacs: ['巨蟹座', '天蠍座', '雙魚座'], gradient: ['#2193b0', '#6dd5ed'] },
+            'wind': { name: '風元素', color: 'rgba(60, 180, 150, 0.9)', icon: '🌪️', zodiacs: ['雙子座', '天秤座', '水瓶座'], gradient: ['#11998e', '#38ef7d'] },
+            'earth': { name: '土元素', color: 'rgba(150, 110, 60, 0.9)', icon: '🌍', zodiacs: ['金牛座', '處女座', '摩羯座'], gradient: ['#3E5151', '#DECBA4'] }
         };
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -182,7 +395,7 @@
                 btn.innerText = "聆聽";
                 statusText.innerHTML = "請說出元素咒語<br>(如：火、水、風、土)";
                 centerIcon.style.opacity = '0';
-                centerIcon.classList.remove('figure8-hint'); // 重置動畫
+                centerIcon.classList.remove('figure8-hint'); 
             };
 
             recognition.onresult = function(event) {
@@ -193,14 +406,11 @@
 
             recognition.onerror = function(event) {
                 btn.classList.remove('listening');
-                console.error("語音錯誤:", event.error);
                 if (event.error === 'not-allowed') statusText.innerHTML = "⚠️ 權限被拒絕<br>請允許使用麥克風";
                 else if (event.error === 'no-speech') statusText.innerHTML = "🔇 沒聽清楚<br>請靠近麥克風重試";
                 else statusText.innerHTML = `❌ 系統錯誤: ${event.error}`;
                 btn.innerText = "重試";
             };
-        } else {
-            statusText.innerHTML = "您的瀏覽器不支援語音功能";
         }
 
         function checkSpell(text) {
@@ -217,13 +427,10 @@
         function activateElement(elementKey) {
             isSpellCharged = true;
             currentElement = elementKey;
-            
-            // 重置動作辨識狀態
             motionStep = 0;
             lastMotionSign = 0;
 
             let elData = elementZodiacs[elementKey];
-
             lightLayer.style.background = elData.color;
             btn.style.opacity = '0'; 
             btn.style.pointerEvents = 'none';
@@ -231,10 +438,9 @@
             centerIcon.innerText = elData.icon;
             centerIcon.style.opacity = '1';
             centerIcon.style.transform = 'scale(1)';
-            centerIcon.classList.add('figure8-hint'); // 加上 8 字型暗示動畫
+            centerIcon.classList.add('figure8-hint'); 
             
             statusText.innerHTML = `已連結 ${elData.name}<br>請以法杖畫出「8」字型！`;
-            
             if (navigator.vibrate) navigator.vibrate(100);
         }
 
@@ -249,11 +455,9 @@
             }
         }
 
-        // --- ✨ 核心升級：8 字型動作判斷邏輯 ✨ ---
         function handleMotion(event) {
             if (!isSpellCharged) return; 
 
-            // 抓取 X 軸的加速度 (過濾掉硬體可能為 null 的狀況)
             let accX = event.acceleration ? event.acceleration.x : null;
             if (accX === null && event.accelerationIncludingGravity) {
                 accX = event.accelerationIncludingGravity.x;
@@ -261,38 +465,33 @@
             if (accX === null) return;
 
             let now = Date.now();
-
-            // 如果玩家畫太慢（超過設定秒數），則重新計算
             if (now - lastMotionTime > motionTimeout) {
                 motionStep = 0;
                 lastMotionSign = 0;
             }
 
-            // 當 X 軸加速度大於門檻，表示玩家正在向左或向右揮動
             if (Math.abs(accX) > xThreshold) {
-                let currentSign = Math.sign(accX); // 取方向：1 為右，-1 為左
-                
+                let currentSign = Math.sign(accX);
                 if (motionStep === 0) {
-                    // 第一筆動作開始
                     motionStep = 1;
                     lastMotionSign = currentSign;
                     lastMotionTime = now;
                 } else if (currentSign !== lastMotionSign && (now - lastMotionTime > 150)) {
-                    // 方向改變，且間隔超過 0.15 秒（過濾手震產生的雜訊）
                     motionStep++;
                     lastMotionSign = currentSign;
                     lastMotionTime = now;
 
-                    // 一個完整的 8 字型，大約會產生 4 次左右方向的反轉
                     if (motionStep >= 4) {
                         motionStep = 0;
                         lastMotionSign = 0;
-                        releaseMagic(); // 條件達成，釋放魔法！
+                        releaseMagic(); 
                     }
                 }
             }
         }
 
+        // --- 核心變更：釋放魔法時初始化刮刮樂卡片 ---
+        let targetZodiac = '';
         function releaseMagic() {
             window.removeEventListener('devicemotion', handleMotion);
             
@@ -304,14 +503,141 @@
             centerIcon.classList.remove('figure8-hint');
 
             let elData = elementZodiacs[currentElement];
-            let randomZodiac = elData.zodiacs[Math.floor(Math.random() * elData.zodiacs.length)];
+            targetZodiac = elData.zodiacs[Math.floor(Math.random() * elData.zodiacs.length)];
             
             setTimeout(() => {
                 lightLayer.style.background = "rgba(20, 20, 20, 0.9)";
-                document.getElementById('zodiac-name').innerText = randomZodiac;
+                
+                // 設定底層文字與圖標
+                document.getElementById('zodiac-name').innerText = targetZodiac;
+                document.getElementById('zodiac-icon').innerText = elData.icon;
                 document.getElementById('zodiac-desc').innerText = `${elData.name} · 星軌校準完成`;
+                
+                // 初始化 Canvas 刮刮層
+                initScratchCard(elData);
+                
                 resultCard.classList.add('show');
             }, 800);
+        }
+
+        // --- 🖌️ 刮刮樂 Canvas 技術核心 ---
+        const canvas = document.getElementById('scratch-canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+
+        function initScratchCard(elData) {
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // 繪製極簡科技感的元素漸層塗層
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, elData.gradient[0]);
+            gradient.addColorStop(1, elData.gradient[1]);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 疊加星砂霧面質感 (微米顆粒感)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+            for (let i = 0; i < 400; i++) {
+                let x = Math.random() * canvas.width;
+                let y = Math.random() * canvas.height;
+                let r = Math.random() * 1.5;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 繪製卡面裝飾線條 (極簡幾何線條)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, canvas.height/2, 80, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // 設置為「透明遮罩模式」，畫筆劃過的地方會變透明
+            ctx.globalCompositeOperation = 'destination-out';
+        }
+
+        // 監聽畫布刮除事件 (支援手機觸控)
+        function scratch(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+
+            const rect = canvas.getBoundingClientRect();
+            // 處理手機 Touch 與滑鼠 Click 座標
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+
+            ctx.lineWidth = 35; // 刮除半徑
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            ctx.beginPath();
+            // 從上一個點連線到新點，避免刮除太快斷線
+            if(canvas.lastX && canvas.lastY) {
+                ctx.moveTo(canvas.lastX, canvas.lastY);
+            } else {
+                ctx.moveTo(x, y);
+            }
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            canvas.lastX = x;
+            canvas.lastY = y;
+
+            // 簡單的防呆：當刮開一定範圍時自動存入收集冊
+            checkScratchPercentage();
+        }
+
+        function startScratch(e) {
+            isDrawing = true;
+            canvas.lastX = null;
+            canvas.lastY = null;
+            scratch(e);
+        }
+
+        function stopScratch() {
+            isDrawing = false;
+        }
+
+        canvas.addEventListener('mousedown', startScratch);
+        canvas.addEventListener('mousemove', scratch);
+        window.addEventListener('mouseup', stopScratch);
+
+        canvas.addEventListener('touchstart', startScratch);
+        canvas.addEventListener('touchmove', scratch);
+        window.addEventListener('touchend', stopScratch);
+
+        // 檢查刮開面積，達到閥值自動觸發 LocalStorage 儲存機制
+        let isSaved = false;
+        function checkScratchPercentage() {
+            if (isSaved) return;
+            
+            // 抽樣檢查畫布像素
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const pixels = imgData.data;
+            let transparentPixels = 0;
+
+            // 步進式抽樣（每4個通道一組，跳著檢驗以優化效能）
+            for (let i = 3; i < pixels.length; i += 32) {
+                if (pixels[i] === 0) transparentPixels++;
+            }
+
+            // 當刮開超過約 35%
+            if (transparentPixels / (pixels.length / 32) > 0.35) {
+                isSaved = true;
+                saveToCollection(targetZodiac);
+            }
+        }
+
+        function saveToCollection(name) {
+            let myCollection = JSON.parse(localStorage.getItem('zodiacStamps')) || [];
+            if (!myCollection.some(item => item.name === name)) {
+                myCollection.push({ name: name, unlockedAt: Date.now() });
+                localStorage.setItem('zodiacStamps', JSON.stringify(myCollection));
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            }
         }
 
         function resetMagic() {
@@ -326,6 +652,9 @@
             statusText.innerHTML = "觸碰以喚醒星軌";
             lightLayer.style.background = "transparent";
             currentElement = '';
+            isSaved = false;
+            // 清空 Canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
         btn.addEventListener('click', () => {
