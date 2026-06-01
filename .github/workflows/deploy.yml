@@ -16,36 +16,29 @@ concurrency:
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    # 💡 關鍵修正：移除 environment: github-pages 宣告，避開 GitHub 變數層級隔離的死穴
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Inject Supabase Credentials Safely
+        # 💡 將 Secrets 綁定到環境變數中
         env:
-          # 將 GitHub Secrets 轉換為標準環境變數，避免字元衝突
-          REAL_URL: ${{ secrets.SUPABASE_URL }}
-          REAL_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          python3 -c "
-          import os
+          # 檢查變數是不是空的，防止空包彈
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "❌ 錯誤：GitHub Secrets 讀取不到值！請檢查 Repository Secrets 命名。"
+            exit 1
+          fi
           
-          # 讀取 index.html
-          with open('index.html', 'r', encoding='utf-8') as f:
-              content = f.read()
+          # 使用 envsubst 精確替換變數，並產生一個暫存檔，再寫回 index.html
+          envsubst '$SUPABASE_URL,$SUPABASE_ANON_KEY' < index.html > index.tmp.html
+          mv index.tmp.html index.html
           
-          # 從環境變數安全地取代佔位符
-          content = content.replace('{{SUPABASE_URL}}', os.environ['REAL_URL'])
-          content = content.replace('{{SUPABASE_ANON_KEY}}', os.environ['REAL_KEY'])
-          
-          # 寫回 index.html
-          with open('index.html', 'w', encoding='utf-8') as f:
-              f.write(content)
-          "
-          echo "✨ 透過 Python 安全注入 Supabase 金鑰完成，100% 避開字元衝突！"
+          echo "✨ 星軌金鑰已透過 envsubst 安全注入成功！"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
