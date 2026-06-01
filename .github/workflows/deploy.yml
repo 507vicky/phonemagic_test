@@ -1,0 +1,46 @@
+name: Deploy Star Rail Wand to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # 如果你的主分支叫 master，請改成 master
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Inject Supabase Credentials
+        run: |
+          # 這裡會使用 sed 指令，把 HTML 裡的佔位符動態替換成 GitHub Secrets 裡的真實金鑰
+          sed -i "s|{{SUPABASE_URL}}|${{ secrets.SUPABASE_URL }}|g" index.mobile-enhanced.html
+          sed -i "s|{{SUPABASE_ANON_KEY}}|${{ secrets.SUPABASE_ANON_KEY }}|g" index.mobile-enhanced.html
+          
+          echo "✨ Supabase 金鑰已成功注入網頁檔案！"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # 如果你的 HTML 檔案在根目錄，這裡維持 '.' 即可
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
