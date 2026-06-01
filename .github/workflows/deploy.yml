@@ -24,12 +24,28 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Inject Supabase Credentials
+      - name: Inject Supabase Credentials Safely
+        env:
+          # 將 GitHub Secrets 轉換為標準環境變數，避免字元衝突
+          REAL_URL: ${{ secrets.SUPABASE_URL }}
+          REAL_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          sed -i "s|{{SUPABASE_URL}}|${{ secrets.SUPABASE_URL }}|g" index.html
-          sed -i "s|{{SUPABASE_ANON_KEY}}|${{ secrets.SUPABASE_ANON_KEY }}|g" index.html
+          python3 -c "
+          import os
           
-          echo "✨ index.html 的 Supabase 金鑰已成功注入！"
+          # 讀取 index.html
+          with open('index.html', 'r', encoding='utf-8') as f:
+              content = f.read()
+          
+          # 從環境變數安全地取代佔位符
+          content = content.replace('{{SUPABASE_URL}}', os.environ['REAL_URL'])
+          content = content.replace('{{SUPABASE_ANON_KEY}}', os.environ['REAL_KEY'])
+          
+          # 寫回 index.html
+          with open('index.html', 'w', encoding='utf-8') as f:
+              f.write(content)
+          "
+          echo "✨ 透過 Python 安全注入 Supabase 金鑰完成，100% 避開字元衝突！"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
