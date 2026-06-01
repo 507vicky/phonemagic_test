@@ -1875,13 +1875,24 @@
       return {
         mode: 'cloud', client,
         async init() { return true; },
-        async register({ displayName, email, password }) {
-          const { data, error } = await client.auth.signUp({ email, password, options: { data: { display_name: displayName } } });
+        async function register({ displayName, email, password }) {
+          const { data, error } = await client.auth.signUp({ 
+            email, 
+            password, 
+            options: { data: { display_name: displayName } } 
+          });
           if (error) throw error;
           const user = data.user;
           if (!user) throw new Error('註冊成功，但尚未取得使用者資訊。');
-          await client.from('profiles').upsert({ user_id: user.id, display_name: displayName, email: email.toLowerCase() });
-          return { id: user.id, email: user.email, displayName: user.user_metadata?.display_name || displayName };
+          
+          // ── 修正重點：刪除原本 client.from('profiles').upsert(...) 那幾行 ──
+          // 現在全部交給剛剛寫好的資料庫 Trigger 自動處理，避免前端因為時間差寫入失敗。
+          
+          return { 
+            id: user.id, 
+            email: user.email, 
+            displayName: user.user_metadata?.display_name || displayName 
+          };
         },
         async login({ email, password }) {
           const { data, error } = await client.auth.signInWithPassword({ email, password });
@@ -1915,14 +1926,24 @@
         && window.supabase;
       if (hasConfig) {
         try {
-          state.supabase = window.supabase.createClient(window.APP_CONFIG.supabaseUrl, window.APP_CONFIG.supabaseAnonKey);
+          // ── 修正重點：明確要求 Supabase 將 Session 持久化儲存在本機 ──
+          state.supabase = window.supabase.createClient(
+            window.APP_CONFIG.supabaseUrl, 
+            window.APP_CONFIG.supabaseAnonKey,
+            {
+              auth: {
+                persistSession: true,      // 記住登入狀態
+                autoRefreshToken: true,    // 自動刷新憑證
+                detectSessionInUrl: true   // 偵測 URL 中的認證資訊
+              }
+            }
+          );
           state.dataStore = createSupabaseStore(state.supabase);
           state.storageMode = 'cloud';
           updateModeUI('cloud');
           return;
         } catch(e) { console.warn('Supabase 初始化失敗', e); }
       }
-      // Supabase 未設定：顯示錯誤提示
       state.dataStore = null;
       state.storageMode = 'none';
       updateModeUI('none');
