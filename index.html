@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#06070b" />
-  <title>星軌校準法杖｜登入收藏版</title>
+  <title>星軌校準法杖｜Supabase 雲端版</title>
   <style>
     /* ============================================================
        ★ 全域 CSS 變數
@@ -695,16 +695,10 @@
       <div class="brand-mark">✦</div>
       <div>
         <div class="brand-title">星軌校準法杖</div>
-        <div class="brand-subtitle">登入收藏版・可串接 Supabase</div>
+        <div class="brand-subtitle">Supabase 雲端同步版</div>
       </div>
     </div>
     <div class="top-actions">
-      <span id="mode-badge" class="chip local">本機收藏模式</span>
-      <!-- 圖片 / emoji 切換 -->
-      <button id="display-toggle-btn" class="display-toggle" title="切換顯示模式">
-        <span class="toggle-dot"></span>
-        <span id="display-mode-label">emoji 模式</span>
-      </button>
       <!-- 登入前顯示「登入」，登入後顯示頭像按鈕 -->
       <button id="auth-open-btn" class="chip-btn">登入／註冊</button>
       <button id="user-avatar-btn" class="chip-btn" style="display:none;" title="查看個人資料">👤</button>
@@ -723,7 +717,13 @@
     <div id="sync-status" class="user-meta">尚未啟用同步</div>
     <div class="mini-stats">
       <div class="stat-pill">收藏進度：<span id="collection-count">0</span> / 12</div>
-      <div class="stat-pill">模式：<span id="storage-label">本機</span></div>
+    </div>
+    <!-- 圖片 / emoji 切換 -->
+    <div style="margin-top:12px;">
+      <button id="display-toggle-btn" class="display-toggle" title="切換顯示模式">
+        <span class="toggle-dot"></span>
+        <span id="display-mode-label">emoji 模式</span>
+      </button>
     </div>
   </div>
 
@@ -742,7 +742,7 @@
     <button id="magic-btn">啟動</button>
     <div id="status-text">請先登入，讓旅人的名字寫入星圖，再喚醒你的元素印記。</div>
     <div class="gesture-hint" id="gesture-hint">登入後，先說出元素，再將手機畫出對應動作；不支援語音時會自動開啟元素選單。</div>
-    <div class="meter-wrap">
+    <div class="meter-wrap" id="motion-meter-wrap" style="display:none;">
       <div class="meter-label-row">
         <span>動作蓄能</span>
         <span id="motion-meter-text">0 / 4</span>
@@ -815,7 +815,7 @@
   <div id="auth-modal" class="overlay show">
     <div class="auth-card">
       <div class="auth-title">旅人登入</div>
-      <div class="auth-subtitle">可先用本機模式測試；若填入 Supabase 設定，現場參展者的帳號與收藏就能跨裝置同步。</div>
+      <div class="auth-subtitle">請登入或註冊，讓你的星座卡牌與收藏進度同步保存至雲端。</div>
       <div class="tabs">
         <button id="tab-login" class="tab-btn active">登入</button>
         <button id="tab-register" class="tab-btn">註冊</button>
@@ -834,7 +834,7 @@
       </div>
       <div id="auth-message" class="auth-message">請先登入或註冊，卡牌才能寫入你的旅人檔案。</div>
       <button id="submit-auth" class="submit-btn">登入並進入儀式</button>
-      <div class="helper-note">若尚未串接雲端資料庫，本頁會自動使用本機模式儲存測試資料。正式上線時，請填入 Supabase 設定並建立資料表。</div>
+      <div class="helper-note">若尚未串接雲端資料庫，請先填入 Supabase 設定並建立資料表再開放參展者使用。</div>
     </div>
   </div>
 
@@ -1049,7 +1049,6 @@
   /* ================================================================
      DOM 參考
   ================================================================ */
-    const modeBadge = document.getElementById('mode-badge');
     const authOpenBtn = document.getElementById('auth-open-btn');
     const userAvatarBtn = document.getElementById('user-avatar-btn');
     const userPanel = document.getElementById('user-panel');
@@ -1058,7 +1057,6 @@
     const userEmailEl = document.getElementById('user-email');
     const syncStatusEl = document.getElementById('sync-status');
     const collectionCountEl = document.getElementById('collection-count');
-    const storageLabelEl = document.getElementById('storage-label');
     const spellBadge = document.getElementById('spell-badge');
     const statusText = document.getElementById('status-text');
     const ritualCopy = document.getElementById('ritual-copy');
@@ -1440,8 +1438,7 @@
       if (!state.currentUser) {
         collectionSummary.textContent = '尚未登入，目前無法建立個人收藏檔案。';
       } else {
-        const modeText = state.storageMode === 'cloud' ? '雲端同步中' : '本機測試中';
-        collectionSummary.textContent = `${state.currentUser.displayName} 已解鎖 ${state.collection.length} / 12 張卡牌，${modeText}。`;
+        collectionSummary.textContent = `${state.currentUser.displayName} 已解鎖 ${state.collection.length} / 12 張卡牌，雲端同步中。`;
       }
     }
 
@@ -1635,6 +1632,7 @@
 
       closeElementModal();
       setStep('gesture');
+      document.getElementById('motion-meter-wrap').style.display = '';
       lightLayer.style.background = element.color;
       btn.style.opacity = '0';
       btn.style.pointerEvents = 'none';
@@ -1713,6 +1711,7 @@
       centerIcon.className = '';
       centerIcon.id = 'center-icon';
       spellBadge.textContent = '星軌待命中';
+      document.getElementById('motion-meter-wrap').style.display = 'none';
       setStep(state.currentUser ? 'invoke' : 'login');
       updateMotionMeter(0);
       updateMotionDots(0, '');
@@ -1767,6 +1766,7 @@
       recognition.onresult = function (event) {
         btn.classList.remove('listening');
         const transcript = event.results[0][0].transcript;
+        document.getElementById('motion-meter-wrap').style.display = '';
         checkSpell(transcript);
       };
       recognition.onerror = function (event) {
@@ -1830,13 +1830,9 @@
 
     function updateModeUI(mode) {
       const isCloud = mode === 'cloud';
-      modeBadge.textContent = isCloud ? 'Supabase 雲端同步' : '本機收藏模式';
-      modeBadge.classList.toggle('cloud', isCloud);
-      modeBadge.classList.toggle('local', !isCloud);
-      storageLabelEl.textContent = isCloud ? '雲端' : '本機';
       syncStatusEl.textContent = isCloud
         ? '已啟用雲端資料庫，可跨裝置同步參展者帳號與收藏卡牌。'
-        : '目前為本機模式，適合原型測試；正式展場建議接上 Supabase。';
+        : '⚠️ Supabase 尚未設定，請先填入 supabaseUrl 與 supabaseAnonKey 才能使用。';
     }
 
     function renderUserPanel() {
@@ -1871,56 +1867,6 @@
       if (!user) return null;
       return { id: user.id, email: user.email, displayName: user.displayName || user.email?.split('@')[0] || '未命名旅人' };
     }
-
-  /* ================================================================
-     本機 DataStore
-  ================================================================ */
-    const localStore = {
-      mode: 'local',
-      async init() { return true; },
-      getUsers() { return JSON.parse(localStorage.getItem('starrail_users') || '[]'); },
-      saveUsers(users) { localStorage.setItem('starrail_users', JSON.stringify(users)); },
-      getSession() { return JSON.parse(localStorage.getItem('starrail_session') || 'null'); },
-      saveSession(session) { localStorage.setItem('starrail_session', JSON.stringify(session)); },
-      clearSession() { localStorage.removeItem('starrail_session'); },
-      getCollections() { return JSON.parse(localStorage.getItem('starrail_collections') || '{}'); },
-      saveCollections(data) { localStorage.setItem('starrail_collections', JSON.stringify(data)); },
-      async register({ displayName, email, password }) {
-        const users = this.getUsers();
-        const normalizedEmail = email.toLowerCase();
-        if (users.some(u => u.email === normalizedEmail)) throw new Error('這個 Email 已經註冊過了。');
-        const user = { id: `local-${Date.now()}`, displayName, email: normalizedEmail, password, createdAt: new Date().toISOString() };
-        users.push(user);
-        this.saveUsers(users);
-        const session = { id: user.id, email: user.email, displayName: user.displayName };
-        this.saveSession(session);
-        return session;
-      },
-      async login({ email, password }) {
-        const users = this.getUsers();
-        const user = users.find(u => u.email === email.toLowerCase() && u.password === password);
-        if (!user) throw new Error('帳號或密碼不正確。');
-        const session = { id: user.id, email: user.email, displayName: user.displayName };
-        this.saveSession(session);
-        return session;
-      },
-      async logout() { this.clearSession(); },
-      async getCurrentUser() { return this.getSession(); },
-      async listCards(userId) {
-        const collections = this.getCollections();
-        return collections[userId] || [];
-      },
-      async saveCard(userId, card) {
-        const collections = this.getCollections();
-        const userCards = collections[userId] || [];
-        if (!userCards.some(c => c.name === card.name)) {
-          userCards.push(card);
-          collections[userId] = userCards;
-          this.saveCollections(collections);
-        }
-        return userCards;
-      }
-    };
 
   /* ================================================================
      Supabase DataStore
@@ -1964,7 +1910,9 @@
     }
 
     async function initStore() {
-      const hasConfig = window.APP_CONFIG.supabaseUrl && window.APP_CONFIG.supabaseAnonKey && window.supabase;
+      const hasConfig = window.APP_CONFIG.supabaseUrl && window.APP_CONFIG.supabaseAnonKey
+        && !window.APP_CONFIG.supabaseUrl.includes('{{')
+        && window.supabase;
       if (hasConfig) {
         try {
           state.supabase = window.supabase.createClient(window.APP_CONFIG.supabaseUrl, window.APP_CONFIG.supabaseAnonKey);
@@ -1972,11 +1920,12 @@
           state.storageMode = 'cloud';
           updateModeUI('cloud');
           return;
-        } catch(e) { console.warn('Supabase 初始化失敗，改回本機模式', e); }
+        } catch(e) { console.warn('Supabase 初始化失敗', e); }
       }
-      state.dataStore = localStore;
-      state.storageMode = 'local';
-      updateModeUI('local');
+      // Supabase 未設定：顯示錯誤提示
+      state.dataStore = null;
+      state.storageMode = 'none';
+      updateModeUI('none');
     }
 
     async function submitAuth() {
@@ -1986,6 +1935,7 @@
       if (!email || !password) { setAuthMessage('請完整填寫 Email 與密碼。', 'error'); return; }
       if (state.authMode === 'register' && !displayName) { setAuthMessage('註冊時需要填寫顯示名稱。', 'error'); return; }
       if (password.length < 6) { setAuthMessage('密碼至少需要 6 碼。', 'error'); return; }
+      if (!state.dataStore) { setAuthMessage('Supabase 尚未設定，無法登入。請先填入雲端資料庫設定。', 'error'); return; }
       submitAuthBtn.disabled = true;
       setAuthMessage('正在建立連結，請稍候…');
       try {
@@ -2017,6 +1967,7 @@
       renderCollection();
       setStep('login');
       openAuthModal();
+      document.getElementById('motion-meter-wrap').style.display = 'none';
       statusText.innerHTML = '請先登入，讓旅人的名字寫入星圖，再喚醒你的元素印記。';
       gestureHint.textContent = '登入後會為每位參展者建立自己的收藏進度。';
       ritualCopy.textContent = '登入後才會建立個人資料與卡牌收藏。';
@@ -2028,6 +1979,11 @@
 
     async function hydrateSession() {
       await initStore();
+      if (!state.dataStore) {
+        setStep('login');
+        openAuthModal();
+        return;
+      }
       const user = normalizeUser(await state.dataStore.getCurrentUser());
       state.currentUser = user;
       renderUserPanel();
