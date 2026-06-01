@@ -487,7 +487,7 @@
       aspect-ratio: 1/1; border-radius: 18px;
       background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.12);
       display: flex; flex-direction: column; justify-content: center; align-items: center;
-      color: rgba(255,255,255,0.35); gap: 6px; padding: 8px;
+      color: rgba(255,255,255,0.35); gap: 8px; padding: 12px;
       transition: all 0.3s ease; overflow: hidden; position: relative;
     }
     /* 未解鎖：問號 */
@@ -513,16 +513,32 @@
     }
 
     /* 收集冊：星座符號 emoji 顯示 */
-    .zodiac-item .zodiac-sym-big { font-size: 2rem; line-height: 1; }
+    .zodiac-item .zodiac-sym-big { 
+      font-size: 2rem; 
+      line-height: 1.2; 
+      height: auto;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     /* 收集冊：圖片模式 */
     .zodiac-item .card-img {
       width: 56px; height: 56px; object-fit: contain; display: none;
       filter: drop-shadow(0 0 8px rgba(255,255,255,0.2));
+      flex-shrink: 0;
     }
-    .zodiac-item.img-mode .card-img { display: block; }
+    .zodiac-item.img-mode .card-img { display: flex; }
     .zodiac-item.img-mode .zodiac-sym-big { display: none; }
 
-    .item-name { font-size: 0.78rem; text-align: center; line-height: 1.3; letter-spacing: 0.5px; }
+    .item-name { 
+      font-size: 0.78rem; 
+      text-align: center; 
+      line-height: 1.3; 
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+      min-height: 1.5em;
+    }
 
     /* ============================================================
        ★ 登入表單
