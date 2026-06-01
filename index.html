@@ -546,10 +546,9 @@
       border-radius: 28px;
       box-shadow: var(--shadow);
       
-      /* ── 修正重點：允許內容超出時在彈窗內部垂直滑動 ── */
       overflow-x: hidden;
       overflow-y: auto; 
-      -webkit-overflow-scrolling: touch; /* 讓 iOS 滑動更順暢 */
+      -webkit-overflow-scrolling: touch;
     }
 
     .modal-shell { padding: 24px 20px 22px; }
@@ -755,9 +754,7 @@
         border-bottom-right-radius: 0;
         transform: translateY(28px);
         transition: transform 0.35s ease;
-        padding-bottom: calc(var(--safe-bottom) + 24px); /* 留更多底部安全空間給按鈕 */
-        
-        /* ── 修正重點：雙重確保手機版彈窗內可順暢滑動 ── */
+        padding-bottom: calc(var(--safe-bottom) + 24px);
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
       }
@@ -935,6 +932,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    // ── 提示 ──
+    // 本地測試時，可以直接把真實的金鑰字串取代掉下方大括號內的佔位符：
     window.APP_CONFIG = window.APP_CONFIG || {
       supabaseUrl: '{{SUPABASE_URL}}',
       supabaseAnonKey: '{{SUPABASE_ANON_KEY}}'
@@ -1019,7 +1018,7 @@
       activeOverlay: null
     };
 
-    // ── 修正重點：精確對齊 HTML 實際存在的 id 屬性 ──
+    // ── DOM 宣告對齊 ──
     const displayNameInput = document.getElementById('reg-name');
     const emailInput = document.getElementById('auth-email');
     const passwordInput = document.getElementById('auth-password');
@@ -1075,6 +1074,7 @@
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
 
+    // ── 修正重點：補齊缺少的字串切割工具函式 ──
     function splitPart(str, separator, index) {
       if(!str) return '';
       let parts = str.split(separator);
@@ -1105,11 +1105,9 @@
 
     function setStep(stepKey) {
       const order = ['login', 'main'];
-      const index = order.indexOf(stepKey);
       progressSteps.forEach(step => {
         let current = order.indexOf(step.dataset.step);
         step.classList.toggle('active', step.dataset.step === stepKey);
-        step.classList.toggle('done', current < index);
       });
     }
 
@@ -1167,7 +1165,7 @@
         storageLabelEl.textContent = '雲端';
         syncStatusEl.textContent = '已連結 Supabase，個人卡牌收藏會即時保存在雲端星圖。';
       } else {
-        modeBadge.textContent = '未連結資料庫';
+        modeBadge.textContent = '未連接資料庫';
         storageLabelEl.textContent = '無';
         syncStatusEl.textContent = '請先完成 GitHub Actions Secrets 密鑰設定。';
       }
@@ -1219,6 +1217,7 @@
         },
 
         async saveCard(userId, card) {
+          // ── 修正重點：對齊 SQL schema 中的底線欄位名稱 element_key ──
           const { error } = await client.from('user_cards').upsert({
             user_id: userId,
             zodiac_name: card.name,
@@ -1571,6 +1570,7 @@
 
     async function saveToCloud() {
       if(!state.dataStore || !state.currentUser) return;
+      // ── 修正對齊點：包裝成符合 store 物件格式的鍵值 ──
       let newCard = { name: state.targetZodiac, element: state.currentElement };
       try {
         await state.dataStore.saveCard(state.currentUser.id, newCard);
