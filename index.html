@@ -541,11 +541,15 @@
     .auth-card {
       width: min(92vw, 420px);
       max-height: min(84vh, 780px);
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 28px;
       box-shadow: var(--shadow);
-      overflow: hidden;
+      
+      /* ── 修正重點：允許內容超出時在彈窗內部垂直滑動 ── */
+      overflow-x: hidden;
+      overflow-y: auto; 
+      -webkit-overflow-scrolling: touch; /* 讓 iOS 滑動更順暢 */
     }
 
     .modal-shell { padding: 24px 20px 22px; }
@@ -751,7 +755,11 @@
         border-bottom-right-radius: 0;
         transform: translateY(28px);
         transition: transform 0.35s ease;
-        padding-bottom: calc(var(--safe-bottom) + 10px);
+        padding-bottom: calc(var(--safe-bottom) + 24px); /* 留更多底部安全空間給按鈕 */
+        
+        /* ── 修正重點：雙重確保手機版彈窗內可順暢滑動 ── */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
       .overlay.show .modal-content,
       .overlay.show .auth-card { transform: translateY(0); }
